@@ -1,0 +1,2220 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>
+      Security Screening of Incoming, Outgoing, and Ongoing Activities
+    </title>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css"
+    />
+    <div class="text-center mb-4">
+      <img
+        src="https://images.contentstack.io/v3/assets/blt827157d7af7bc6d4/blt539b6710c5d23513/63306748763d011cd3e925bd/megaworld-logo.png"
+        alt="Header Image"
+        class="img-fluid"
+        style="max-width: 100%; width: 600px"
+      />
+    </div>
+    <style>
+      /* Spinner Background Overlay */
+      .spinner-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(255, 255, 255, 0.8);
+        /* Light white transparent background */
+        display: flex;
+        justify-content: center;
+        /* Center align horizontally */
+        align-items: center;
+        /* Center align vertically */
+        z-index: 9998;
+        /* Background overlay is below the spinner but above other content */
+      }
+
+      /* Submitting Text Styling */
+      .submitting-text {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #888;
+        /* Light gray color for the text */
+        padding: 15px 30px;
+        border-radius: 5px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        /* Optional subtle shadow */
+      }
+    </style>
+  </head>
+
+  <!-- Spinner Background Overlay (Initially hidden) -->
+  <div id="loadingSpinner" class="spinner-overlay" style="display: none">
+    <div class="submitting-text">Submitting...</div>
+  </div>
+
+  <body>
+    <div id="app" class="container mt-5">
+      <h1 style="text-align: center">
+        MCD Security Screening of Incoming, Outgoing, and Ongoing Activities
+      </h1>
+      <br />
+      <div class="mb-3">
+        <label for="sheetSelect" class="form-label">Property</label>
+        <select
+          v-model="selectedSheet"
+          id="sheetSelect"
+          class="form-select"
+          placeholder="Select Property"
+        >
+          <option value="" disabled>Select Property</option>
+
+          <option v-for="sheet in sheets" :key="sheet" :value="sheet">
+            {{ sheet }}
+          </option>
+        </select>
+      </div>
+      <div class="mb-3">
+        <label for="name" class="form-label">Name of Operator</label>
+        <input
+          type="text"
+          id="name"
+          class="form-control"
+          v-model="name"
+          placeholder="Ex. Juan D. Dela Cruz"
+        />
+      </div>
+
+      <div class="mb-3">
+        <label for="dateofreporting" class="form-label"
+          >Date of Reporting</label
+        >
+        <input
+          type="date"
+          id="dateofreporting"
+          class="form-control"
+          v-model="dateofreporting"
+        />
+      </div>
+
+      <div class="mb-3">
+        <label for="transaction" class="form-label">Transaction</label>
+        <select v-model="transaction" id="transaction" class="form-select">
+          <option value="" disabled>Select Transaction</option>
+          <option
+            v-for="option in transactionOptions"
+            :key="option"
+            :value="option"
+          >
+            {{ option }}
+          </option>
+        </select>
+      </div>
+      <br />
+
+      <div v-if="transaction === 'Incoming STL Client'">
+        <h1><b> Incoming STL Client </b></h1>
+        <br />
+        <div class="mb-3">
+          <label for="tnbn" class="form-label">Trade Name/Business Name</label>
+          <input type="text" id="tnbn" class="form-control" v-model="tnbn" />
+        </div>
+
+        <div class="mb-3">
+          <label for="moanum" class="form-label">MOA Number</label>
+          <input
+            type="number"
+            id="depositAmount"
+            class="form-control"
+            v-model="moanum"
+            @input="validateNumber"
+          />
+        </div>
+
+        <div class="mb-3">
+          <label for="doi" class="form-label">Date of Ingress</label>
+          <input type="date" id="doi" class="form-control" v-model="doi" />
+        </div>
+        <div class="mb-3">
+          <label for="ds" class="form-label">Date Start</label>
+          <input type="date" id="ds" class="form-control" v-model="ds" />
+        </div>
+        <div class="mb-3">
+          <label for="de" class="form-label">Date End</label>
+          <input type="date" id="de" class="form-control" v-model="de" />
+        </div>
+
+        <div class="mb-3">
+          <label for="certificatePresented" class="form-label"
+            >Certificate Presented</label
+          >
+          <select
+            v-model="certificatePresented"
+            id="certificatePresented"
+            class="form-select"
+          >
+            <option value="" disabled>Select Certificate Presented</option>
+            <option
+              v-for="option in certificatePresentedOptions"
+              :key="option"
+              :value="option"
+            >
+              {{ option }}
+            </option>
+          </select>
+        </div>
+
+        <div class="mb-3">
+          <label for="file1" class="form-label"
+            >Photo Upload of Permit/Certificate</label
+          >
+          <input
+            type="file"
+            id="file1"
+            @change="handleFileChange($event, 'file1')"
+            class="form-control"
+          />
+        </div>
+
+        <div class="mb-3">
+          <label for="methodofApproval" class="form-label"
+            >Method of Approval</label
+          >
+          <select
+            v-model="methodofApproval"
+            id="methodofApproval"
+            class="form-select"
+          >
+            <option value="" disabled>Select Method of Approval</option>
+            <option
+              v-for="option in methodofApprovalOptions"
+              :key="option"
+              :value="option"
+            >
+              {{ option }}
+            </option>
+          </select>
+        </div>
+
+        <div class="mb-3">
+          <label for="file2" class="form-label"
+            >Photo Upload of Approval (Email, WhatsApp Message and Text
+            Message)</label
+          >
+          <input
+            type="file"
+            id="file2"
+            @change="handleFileChange($event, 'file2')"
+            class="form-control"
+          />
+        </div>
+
+        <div class="mb-3">
+          <label for="whoApprove" class="form-label">Who Approved?</label>
+          <input
+            type="text"
+            id="whoApprove"
+            class="form-control"
+            v-model="whoApprove"
+          />
+        </div>
+      </div>
+
+      <div v-if="transaction === 'Outgoing STL Client'">
+        <h1><b>Outgoing STL Client</b></h1>
+        <br />
+        <div class="mb-3">
+          <label for="osctnbn" class="form-label"
+            >Trade Name/Business Name</label
+          >
+          <input
+            type="text"
+            id="osctnbn"
+            class="form-control"
+            v-model="osctnbn"
+          />
+        </div>
+
+        <div class="mb-3">
+          <label for="oscmoanum" class="form-label">MOA Number</label>
+          <input
+            type="number"
+            id="depositAmount"
+            class="form-control"
+            v-model="oscmoanum"
+            @input="validateNumber"
+          />
+        </div>
+
+        <div class="mb-3">
+          <label for="oscdoi" class="form-label">Date of Ingress</label>
+          <input
+            type="date"
+            id="oscdoi"
+            class="form-control"
+            v-model="oscdoi"
+          />
+        </div>
+        <div class="mb-3">
+          <label for="oscds" class="form-label">Date Start</label>
+          <input type="date" id="oscds" class="form-control" v-model="oscds" />
+        </div>
+        <div class="mb-3">
+          <label for="oscde" class="form-label">Date End</label>
+          <input type="date" id="oscde" class="form-control" v-model="oscde" />
+        </div>
+
+        <div class="mb-3">
+          <label for="osccertificatePresented" class="form-label"
+            >Certificate Presented</label
+          >
+          <select
+            v-model="osccertificatePresented"
+            id="osccertificatePresented"
+            class="form-select"
+          >
+            <option value="" disabled>Select Certificate Presented</option>
+            <option
+              v-for="option in osccertificatePresentedOptions"
+              :key="option"
+              :value="option"
+            >
+              {{ option }}
+            </option>
+          </select>
+        </div>
+
+        <div class="mb-3">
+          <label for="file3" class="form-label"
+            >Photo Upload of Permit/Certificate</label
+          >
+          <input
+            type="file"
+            id="file3"
+            @change="handleFileChange($event, 'file3')"
+            class="form-control"
+          />
+        </div>
+
+        <div class="mb-3">
+          <label for="oscmethodofApproval" class="form-label"
+            >Method of Approval</label
+          >
+          <select
+            v-model="oscmethodofApproval"
+            id="oscmethodofApproval"
+            class="form-select"
+          >
+            <option value="" disabled>Select Method of Approval</option>
+            <option
+              v-for="option in oscmethodofApprovalOptions"
+              :key="option"
+              :value="option"
+            >
+              {{ option }}
+            </option>
+          </select>
+        </div>
+
+        <div class="mb-3">
+          <label for="file4" class="form-label"
+            >Photo Upload of Approval (Email, WhatsApp Message, Text Message and
+            Verbal)</label
+          >
+          <input
+            type="file"
+            id="file4"
+            @change="handleFileChange($event, 'file4')"
+            class="form-control"
+          />
+        </div>
+
+        <div class="mb-3">
+          <label for="oscwhoApprove" class="form-label">Who Approved?</label>
+          <input
+            type="text"
+            id="oscwhoApprove"
+            class="form-control"
+            v-model="oscwhoApprove"
+          />
+        </div>
+      </div>
+
+      <div v-if="transaction === 'Incoming Inline Client'">
+        <h1><b>Incoming Inline Client</b></h1>
+        <br />
+        <div class="mb-3">
+          <label for="iictnbn" class="form-label"
+            >Trade Name/Business Name</label
+          >
+          <input
+            type="text"
+            id="iictnbn"
+            class="form-control"
+            v-model="iictnbn"
+          />
+        </div>
+
+        <div class="mb-3">
+          <label for="iicdoi" class="form-label">Date of Ingress</label>
+          <input
+            type="date"
+            id="iicdoi"
+            class="form-control"
+            v-model="iicdoi"
+          />
+        </div>
+        <div class="mb-3">
+          <label for="iicds" class="form-label">Date Start</label>
+          <input type="date" id="iicds" class="form-control" v-model="iicds" />
+        </div>
+        <div class="mb-3">
+          <label for="iicde" class="form-label">Date End</label>
+          <input type="date" id="iicde" class="form-control" v-model="iicde" />
+        </div>
+
+        <div class="mb-3">
+          <label for="iiccertificatePresented" class="form-label"
+            >Certificate Presented</label
+          >
+          <select
+            v-model="iiccertificatePresented"
+            id="iiccertificatePresented"
+            class="form-select"
+          >
+            <option value="" disabled>Select Certificate Presented</option>
+            <option
+              v-for="option in iiccertificatePresentedOptions"
+              :key="option"
+              :value="option"
+            >
+              {{ option }}
+            </option>
+          </select>
+        </div>
+
+        <div class="mb-3">
+          <label for="file5" class="form-label"
+            >Photo Upload of Permit/Certificate</label
+          >
+          <input
+            type="file"
+            id="file5"
+            @change="handleFileChange($event, 'file5')"
+            class="form-control"
+          />
+        </div>
+
+        <div class="mb-3">
+          <label for="iicmethodofApproval" class="form-label"
+            >Method of Approval</label
+          >
+          <select
+            v-model="iicmethodofApproval"
+            id="iicmethodofApproval"
+            class="form-select"
+          >
+            <option value="" disabled>Select Method of Approval</option>
+            <option
+              v-for="option in iicmethodofApprovalOptions"
+              :key="option"
+              :value="option"
+            >
+              {{ option }}
+            </option>
+          </select>
+        </div>
+
+        <div class="mb-3">
+          <label for="file6" class="form-label"
+            >Photo Upload of Approval (Email, WhatsApp Message and
+            Verbal)</label
+          >
+          <input
+            type="file"
+            id="file6"
+            @change="handleFileChange($event, 'file6')"
+            class="form-control"
+          />
+        </div>
+
+        <div class="mb-3">
+          <label for="iicwhoApprove" class="form-label">Who Approved?</label>
+          <input
+            type="text"
+            id="iicwhoApprove"
+            class="form-control"
+            v-model="iicwhoApprove"
+          />
+        </div>
+      </div>
+
+      <div v-if="transaction === 'Outgoing Inline Client'">
+        <h1><b>Outgoing Inline Client</b></h1>
+        <br />
+
+        <div class="mb-3">
+          <label for="oictnbn" class="form-label"
+            >Trade Name/Business Name</label
+          >
+          <input
+            type="text"
+            id="oictnbn"
+            class="form-control"
+            v-model="oictnbn"
+          />
+        </div>
+
+        <div class="mb-3">
+          <label for="oicdoi" class="form-label">Date of Ingress</label>
+          <input
+            type="date"
+            id="oicdoi"
+            class="form-control"
+            v-model="oicdoi"
+          />
+        </div>
+
+        <div class="mb-3">
+          <label for="oicds" class="form-label">Date Start</label>
+          <input type="date" id="oicds" class="form-control" v-model="oicds" />
+        </div>
+
+        <div class="mb-3">
+          <label for="oicde" class="form-label">Date End</label>
+          <input type="date" id="oicde" class="form-control" v-model="oicde" />
+        </div>
+
+        <div class="mb-3">
+          <label for="oiccertificatePresented" class="form-label"
+            >Certificate Presented</label
+          >
+          <select
+            v-model="oiccertificatePresented"
+            id="oiccertificatePresented"
+            class="form-select"
+          >
+            <option value="" disabled>Select Certificate Presented</option>
+            <option
+              v-for="option in oiccertificatePresentedOptions"
+              :key="option"
+              :value="option"
+            >
+              {{ option }}
+            </option>
+          </select>
+        </div>
+
+        <div class="mb-3">
+          <label for="file7" class="form-label"
+            >Photo Upload of Permit/Certificate</label
+          >
+          <input
+            type="file"
+            id="file7"
+            @change="handleFileChange($event, 'file7')"
+            class="form-control"
+          />
+        </div>
+
+        <div class="mb-3">
+          <label for="oicmethodofApproval" class="form-label"
+            >Method of Approval</label
+          >
+          <select
+            v-model="oicmethodofApproval"
+            id="oicmethodofApproval"
+            class="form-select"
+          >
+            <option value="" disabled>Select Method of Approval</option>
+            <option
+              v-for="option in oicmethodofApprovalOptions"
+              :key="option"
+              :value="option"
+            >
+              {{ option }}
+            </option>
+          </select>
+        </div>
+
+        <div class="mb-3">
+          <label for="file8" class="form-label"
+            >Photo Upload of Approval (Email, WhatsApp Message and Text
+            Message)</label
+          >
+          <input
+            type="file"
+            id="file8"
+            @change="handleFileChange($event, 'file8')"
+            class="form-control"
+          />
+        </div>
+
+        <div class="mb-3">
+          <label for="oicwhoApprove" class="form-label">Who Approved?</label>
+          <input
+            type="text"
+            id="oicwhoApprove"
+            class="form-control"
+            v-model="oicwhoApprove"
+          />
+        </div>
+      </div>
+
+      <div v-if="transaction === 'Incoming Marketing Event Supplier'">
+        <h1><b>Incoming Marketing Event Supplier</b></h1>
+        <br />
+
+        <!-- Company Name Input -->
+        <div class="mb-3">
+          <label for="imecn" class="form-label">Company Name</label>
+          <input
+            type="text"
+            id="imecn"
+            class="form-control"
+            v-model="imecn"
+            required
+          />
+        </div>
+
+        <!-- Name of Personnel/Crew -->
+        <div class="mb-3">
+          <label for="imenp" class="form-label">Name of Personnel/Crew</label>
+          <input
+            type="text"
+            id="imenp"
+            class="form-control"
+            v-model="imenp"
+            required
+          />
+        </div>
+
+        <!-- Date of Ingress -->
+        <div class="mb-3">
+          <label for="imede" class="form-label">Date of Ingress</label>
+          <input
+            type="date"
+            id="imede"
+            class="form-control"
+            v-model="imede"
+            required
+          />
+        </div>
+
+        <!-- Expected Egress Date -->
+        <div class="mb-3">
+          <label for="imesed" class="form-label">Expected Egress Date</label>
+          <input
+            type="date"
+            id="imesed"
+            class="form-control"
+            v-model="imesed"
+            required
+          />
+        </div>
+
+        <!-- Entry Point -->
+        <div class="mb-3">
+          <label for="imeep" class="form-label">Entry Point</label>
+          <textarea
+            id="imeep"
+            class="form-control"
+            v-model="imeep"
+            placeholder="Ex. RDU"
+            required
+          ></textarea>
+        </div>
+
+        <!-- List of Items -->
+        <div class="mb-3">
+          <label for="imeli" class="form-label">List of Items</label>
+          <textarea
+            id="imeli"
+            class="form-control"
+            v-model="imeli"
+            required
+          ></textarea>
+        </div>
+
+        <!-- Quantity of Items -->
+        <div class="mb-3">
+          <label for="imeqi" class="form-label">Quantity of Items</label>
+          <textarea
+            id="imeqi"
+            class="form-control"
+            v-model="imeqi"
+            required
+          ></textarea>
+        </div>
+
+        <!-- Work Permit Approval Dropdown -->
+        <div class="mb-3">
+          <label for="imecertificatePresented" class="form-label"
+            >Work Permit Approval</label
+          >
+          <select
+            v-model="imecertificatePresented"
+            id="imecertificatePresented"
+            class="form-select"
+            required
+          >
+            <option value="" disabled>Select Work Permit Approval</option>
+            <option
+              v-for="option in imecertificatePresentedOptions"
+              :key="option"
+              :value="option"
+            >
+              {{ option }}
+            </option>
+          </select>
+        </div>
+
+        <div class="mb-3">
+          <label for="file9" class="form-label"
+            >Photo Upload of Work Permit Approval</label
+          >
+          <input
+            type="file"
+            id="file9"
+            @change="handleFileChange($event, 'file9')"
+            class="form-control"
+          />
+        </div>
+
+        <!-- Who Approved? Input -->
+        <div class="mb-3">
+          <label for="imewhoApprove" class="form-label">Who Approved?</label>
+          <input
+            type="text"
+            id="imewhoApprove"
+            class="form-control"
+            v-model="imewhoApprove"
+            required
+          />
+        </div>
+
+        <!-- Mall Tenant / Organizer / Marketing Officer Involved -->
+        <div class="mb-3">
+          <label for="imemalltenant" class="form-label"
+            >Mall Tenant / Organizer / Marketing Officer Involved</label
+          >
+          <input
+            type="text"
+            id="imemalltenant"
+            class="form-control"
+            v-model="imemalltenant"
+            required
+          />
+        </div>
+      </div>
+
+      <div v-if="transaction === 'Outgoing Marketing Event Supplier'">
+        <h1><b>Outgoing Marketing Event Supplier</b></h1>
+        <br />
+
+        <!-- Company Name Input -->
+        <div class="mb-3">
+          <label for="omecn" class="form-label">Company Name</label>
+          <input
+            type="text"
+            id="omecn"
+            class="form-control"
+            v-model="omecn"
+            required
+          />
+        </div>
+
+        <!-- Name of Personnel/Crew -->
+        <div class="mb-3">
+          <label for="omenp" class="form-label">Name of Personnel/Crew</label>
+          <input
+            type="text"
+            id="omenp"
+            class="form-control"
+            v-model="omenp"
+            required
+          />
+        </div>
+
+        <!-- Expected Egress Date -->
+        <div class="mb-3">
+          <label for="imesed" class="form-label">Egress Date</label>
+          <input
+            type="date"
+            id="omesed"
+            class="form-control"
+            v-model="omesed"
+            required
+          />
+        </div>
+
+        <!-- Entry Point -->
+        <div class="mb-3">
+          <label for="omeep" class="form-label">Exit Point</label>
+          <textarea
+            id="omeep"
+            class="form-control"
+            v-model="omeep"
+            placeholder="Ex. RDU"
+            required
+          ></textarea>
+        </div>
+
+        <!-- List of Items -->
+        <div class="mb-3">
+          <label for="imeli" class="form-label">Items Being Removed</label>
+          <textarea
+            id="omeli"
+            class="form-control"
+            v-model="omeli"
+            required
+          ></textarea>
+        </div>
+
+        <!-- Work Permit Approval Dropdown -->
+        <div class="mb-3">
+          <label for="omecertificatePresented" class="form-label"
+            >Work Permit Approval</label
+          >
+          <select
+            v-model="omecertificatePresented"
+            id="omecertificatePresented"
+            class="form-select"
+            required
+          >
+            <option value="" disabled>Select Work Permit Approval</option>
+            <option
+              v-for="option in omecertificatePresentedOptions"
+              :key="option"
+              :value="option"
+            >
+              {{ option }}
+            </option>
+          </select>
+        </div>
+
+        <div class="mb-3">
+          <label for="file10" class="form-label"
+            >Photo Upload of Work Permit Approval</label
+          >
+          <input
+            type="file"
+            id="file10"
+            @change="handleFileChange($event, 'file10')"
+            class="form-control"
+          />
+        </div>
+
+        <!-- Who Approved? Input -->
+        <div class="mb-3">
+          <label for="omewhoApprove" class="form-label">Who Approved?</label>
+          <input
+            type="text"
+            id="omewhoApprove"
+            class="form-control"
+            v-model="omewhoApprove"
+            required
+          />
+        </div>
+
+        <!-- Mall Tenant / Organizer / Marketing Officer Involved -->
+        <div class="mb-3">
+          <label for="omemalltenant" class="form-label"
+            >Mall Tenant / Organizer / Marketing Officer Involved</label
+          >
+          <input
+            type="text"
+            id="omemalltenant"
+            class="form-control"
+            v-model="omemalltenant"
+            required
+          />
+        </div>
+      </div>
+
+      <div v-if="transaction === 'Delivery'">
+        <h1><b>Delivery Details</b></h1>
+        <br />
+
+        <!-- Company Name Input -->
+        <div class="mb-3">
+          <label for="ddtsn" class="form-label">Tenant / Store Name</label>
+          <input
+            type="text"
+            id="ddtsn"
+            class="form-control"
+            v-model="ddtsn"
+            required
+          />
+        </div>
+
+        <div class="mb-3">
+          <label for="dddd" class="form-label">Delivery Date</label>
+          <input
+            type="date"
+            id="dddd"
+            class="form-control"
+            v-model="dddd"
+            required
+          />
+        </div>
+
+        <div class="mb-3">
+          <label for="dddt" class="form-label">Delivery Time</label>
+          <input
+            type="time"
+            id="dddt"
+            class="form-control"
+            v-model="dddt"
+            required
+          />
+        </div>
+
+        <!-- Entry Point -->
+        <div class="mb-3">
+          <label for="dddep" class="form-label">Delivery Entry Point</label>
+          <textarea
+            id="dddep"
+            class="form-control"
+            v-model="dddep"
+            placeholder="Ex. RDU"
+            required
+          ></textarea>
+        </div>
+
+        <div class="mb-3">
+          <label for="ddcertificatePresented" class="form-label"
+            >Category of Items</label
+          >
+          <select
+            v-model="ddcertificatePresented"
+            id="ddcertificatePresented"
+            class="form-select"
+            required
+          >
+            <option value="" disabled>Select Category of Items</option>
+            <option
+              v-for="option in ddcertificatePresentedOptions"
+              :key="option"
+              :value="option"
+            >
+              {{ option }}
+            </option>
+          </select>
+        </div>
+
+        <!-- Input field will always be present, but it will be conditionally enabled -->
+          <div class="mb-3">
+            <label for="coiothers" class="form-label">Please Specify Category of Items  if (Others)</label>
+            <input 
+              v-model="coiothers" 
+              id="coiothers" 
+              type="text" 
+              class="form-control"
+              :placeholder="ddcertificatePresented === 'Others' ? 'Enter Category of Items Details' : ''" 
+              :disabled="ddcertificatePresented !== 'Others'"
+              :required="ddcertificatePresented === 'Others'" 
+              
+            />
+          </div>
+
+        <div class="mb-3">
+          <label for="ddqoei" class="form-label">Quantity of Each Item </label>
+          <textarea
+            id="ddqoei"
+            class="form-control"
+            v-model="ddqoei"
+            required
+          ></textarea>
+        </div>
+
+        <div class="mb-3">
+          <label for="ddworkpermitapproval" class="form-label"
+            >Work Permit Approval</label
+          >
+          <select
+            v-model="ddworkpermitapproval"
+            id="ddworkpermitapproval"
+            class="form-select"
+            required
+          >
+            <option value="" disabled>Select Category of Items</option>
+            <option
+              v-for="option in ddworkpermitapprovaloptions"
+              :key="option"
+              :value="option"
+            >
+              {{ option }}
+            </option>
+          </select>
+        </div>
+
+        <div class="mb-3">
+            <label for="file12" class="form-label"
+              >Photo Upload of Work Permit Approval</label
+            >
+            <input
+              type="file"
+              id="file12"
+              @change="handleFileChange($event, 'file12')"
+              class="form-control"
+            />
+          </div>
+
+
+
+        <!-- Who Approved? Input -->
+        <div class="mb-3">
+          <label for="ddwhoApprove" class="form-label">Who Approved?</label>
+          <input
+            type="text"
+            id="ddwhoApprove"
+            class="form-control"
+            v-model="ddwhoApprove"
+            required
+          />
+        </div>
+      </div>
+
+      <div v-if="transaction === 'Pullout'">
+        <h1><b>Pullout Details</b></h1>
+        <br />
+
+        <!-- Company Name Input -->
+        <div class="mb-3">
+          <label for="plldtsn" class="form-label">Tenant / Store Name</label>
+          <input
+            type="text"
+            id="plldtsn"
+            class="form-control"
+            v-model="plldtsn"
+            required
+          />
+        </div>
+
+        <div class="mb-3">
+          <label for="plldd" class="form-label">Pullout Date</label>
+          <input
+            type="date"
+            id="plldd"
+            class="form-control"
+            v-model="plldd"
+            required
+          />
+        </div>
+
+        <div class="mb-3">
+          <label for="pllt" class="form-label">Pullout Time</label>
+          <input
+            type="time"
+            id="pllt"
+            class="form-control"
+            v-model="pllt"
+            required
+          />
+        </div>
+
+        <div class="mb-3">
+          <label for="pllext" class="form-label">Pullout Exit Point</label>
+          <input
+            type="text"
+            id="pllext"
+            class="form-control"
+            v-model="pllext"
+            required
+          />
+        </div>
+
+        <div class="mb-3">
+          <label for="pllloi" class="form-label">List of Items</label>
+          <textarea
+            id="pllloi"
+            class="form-control"
+            v-model="pllloi"
+            required
+          ></textarea>
+        </div>
+
+        <div class="mb-3">
+          <label for="pllqty" class="form-label">Quantity of Each Items</label>
+          <textarea
+            id="pllqty"
+            class="form-control"
+            v-model="pllqty"
+            required
+          ></textarea>
+        </div>
+
+        <div class="mb-3">
+          <label for="pllcertificatePresented" class="form-label"
+            >Work Permit Approval</label
+          >
+          <select
+            v-model="pllcertificatePresented"
+            id="pllcertificatePresented"
+            class="form-select"
+            required
+          >
+            <option value="" disabled>Select Category of Items</option>
+            <option
+              v-for="option in pllcertificatePresentedOptions"
+              :key="option"
+              :value="option"
+            >
+              {{ option }}
+            </option>
+          </select>
+        </div>
+
+        <!-- Who Approved? Input -->
+        <div class="mb-3">
+          <label for="pllwhoApprove" class="form-label">Who Approved?</label>
+          <input
+            type="text"
+            id="pllwhoApprove"
+            class="form-control"
+            v-model="pllwhoApprove"
+            required
+          />
+        </div>
+      </div>
+
+      <div v-if="transaction === 'Incoming Contractor'">
+        <h1><b>Incoming Contractor</b></h1>
+        <br />
+        <div class="mb-3">
+          <label for="icdtow" class="form-label">Type of Work</label>
+          <select v-model="icdtow" id="icdtow" class="form-select">
+            <option value="" disabled>Select Type of Work</option>
+            <option
+              v-for="option in icdtowOptions"
+              :key="option"
+              :value="option"
+            >
+              {{ option }}
+            </option>
+          </select>
+        </div>
+
+        <div v-show="icdtow === 'Maintenance Work'">
+          <h3><b>Maintenance Work</b></h3>
+          <br />
+
+          <div class="mb-3">
+            <label for="cat" class="form-label">Category</label>
+            <select v-model="cat" id="cat" class="form-select">
+              <option value="" disabled>Select Category</option>
+              <option
+                v-for="option in catOptions"
+                :key="option"
+                :value="option"
+              >
+                {{ option }}
+              </option>
+            </select>
+          </div>
+
+          <!-- Input field will always be present, but it will be conditionally enabled -->
+          <div class="mb-3">
+            <label for="catothers" class="form-label">Please Specify Category if (Others)</label>
+            <input 
+              v-model="catothers" 
+              id="catothers" 
+              type="text" 
+              class="form-control"
+              :placeholder="cat === 'Others' ? 'Enter Category Details' : ''" 
+              :disabled="cat !== 'Others'" 
+              required
+            />
+          </div>
+
+
+    
+
+          <div class="mb-3">
+            <label for="catcn" class="form-label">Company Name</label>
+            <input
+              type="text"
+              id="catcn"
+              class="form-control"
+              v-model="catcn"
+              required
+            />
+          </div>
+
+          <div class="mb-3">
+            <label for="catwl" class="form-label">Work Location</label>
+            <input
+              type="text"
+              id="catwl"
+              class="form-control"
+              v-model="catwl"
+              required
+            />
+          </div>
+
+          <div class="mb-3">
+            <label for="catesdw" class="form-label"
+              >Expected Start Date of Work</label
+            >
+            <input
+              type="date"
+              id="catesdw"
+              class="form-control"
+              v-model="catesdw"
+              required
+            />
+          </div>
+
+          <div class="mb-3">
+            <label for="cateedw" class="form-label"
+              >Expected End Date of Work</label
+            >
+            <input
+              type="date"
+              id="cateedw"
+              class="form-control"
+              v-model="cateedw"
+              required
+            />
+          </div>
+
+          <div class="mb-3">
+            <label for="catmbi" class="form-label"
+              >Materials / Equipment Brought In</label
+            >
+            <textarea
+              id="catmbi"
+              class="form-control"
+              v-model="catmbi"
+              required
+            ></textarea>
+          </div>
+
+          
+
+          <div class="mb-3">
+            <label for="seot" class="form-label">Special Equipment or Tools </label>
+            <select v-model="seot" id="seot" class="form-select">
+              <option value="" disabled>Select Special Equipment or Tools </option>
+              <option
+                v-for="option in seotOptions"
+                :key="option"
+                :value="option"
+              >
+                {{ option }}
+              </option>
+            </select>
+          </div>
+
+          <!-- Input field will always be present, but it will be conditionally enabled -->
+          <div class="mb-3">
+            <label for="seotsset" class="form-label">Please Specify Special Equipment or Tools  if (Others)</label>
+            <input 
+              v-model="seotsset" 
+              id="seotsset" 
+              type="text" 
+              class="form-control"
+              :placeholder="seot === 'Others' ? 'Enter Special Equipment or Tools  Details' : ''" 
+              :disabled="seot !== 'Others'" 
+              required="seot !== 'Others'"
+            />
+          </div>
+
+          <div class="mb-3">
+            <label for="cattoa" class="form-label"
+              >Toolbox Orientation Attended?</label
+            >
+            <select v-model="cattoa" id="cattoa" class="form-select">
+              <option value="" disabled>Select Yes/No</option>
+              <option
+                v-for="option in cattoaOptions"
+                :key="option"
+                :value="option"
+              >
+                {{ option }}
+              </option>
+            </select>
+          </div>
+
+          <div class="mb-3">
+            <label for="mwd" class="form-label">Work Permit Approval</label>
+            <select v-model="mwd" id="mwd" class="form-select">
+              <option value="" disabled>
+                Please Select Work Permit Approval
+              </option>
+              <option
+                v-for="option in mwdOptions"
+                :key="option"
+                :value="option"
+              >
+                {{ option }}
+              </option>
+            </select>
+          </div>
+
+          <div class="mb-3">
+            <label for="file9" class="form-label"
+              >Photo Upload of Work Permit Approval</label
+            >
+            <input
+              type="file"
+              id="file11"
+              @change="handleFileChange($event, 'file11')"
+              class="form-control"
+            />
+          </div>
+
+          <div class="mb-3">
+            <label for="catwap" class="form-label">Who Approve?</label>
+            <input
+              type="text"
+              id="catwap"
+              class="form-control"
+              v-model="catwap"
+              required
+            />
+          </div>
+        </div>
+
+        <div v-if="icdtow === 'Demolition Works'">
+          <h3><b>Demolition Works</b></h3>
+          <br />
+
+          <div class="mb-3">
+            <label for="catdws" class="form-label"
+              >Category</label
+            >
+            <select v-model="catdws" id="catdws" class="form-select">
+              <option value="" disabled>Select Category</option>
+              <option
+                v-for="option in catdwsOptions"
+                :key="option"
+                :value="option"
+              >
+                {{ option }}
+              </option>
+            </select>
+          </div>
+
+          <!-- Input field will always be present, but it will be conditionally enabled -->
+          <div class="mb-3">
+            <label for="catdwsdw" class="form-label">Please Specify Category  if (Others)</label>
+            <input 
+              v-model="catdwsdw" 
+              id="catdwsdw" 
+              type="text" 
+              class="form-control"
+              :placeholder="catdws === 'Others' ? 'Enter Category Details' : ''" 
+              :disabled="catdws !== 'Others'" 
+              required="catdws !== 'Others'"
+            />
+          </div>
+
+
+          <div class="mb-3">
+            <label for="dwcompna" class="form-label">Company Name</label>
+            <input
+              type="text"
+              id="dwcompna"
+              class="form-control"
+              v-model="dwcompna"
+              required
+            />
+          </div>
+
+
+
+
+          <div class="mb-3">
+            <label for="dwsdw" class="form-label"
+              >Expected Start Date of Work</label
+            >
+            <input
+              type="date"
+              id="dwsdw"
+              class="form-control"
+              v-model="dwsdw"
+              required
+            />
+          </div>
+
+          <div class="mb-3">
+            <label for="dwedw" class="form-label"
+              >Expected End Date of Work</label
+            >
+            <input
+              type="date"
+              id="dwedw"
+              class="form-control"
+              v-model="dwedw"
+              required
+            />
+          </div>
+
+        <div class="mb-3">
+          <label for="dwmeb" class="form-label">Materials / Equipment Brought In</label>
+          <textarea
+            id="dwmeb"
+            class="form-control"
+            v-model="dwmeb"
+            
+            required
+          ></textarea>
+        </div>
+
+                  <div class="mb-3">
+            <label for="dwwl" class="form-label">Work Location</label>
+            <input
+              type="text"
+              id="dwwl"
+              class="form-control"
+              v-model="dwwl"
+              required
+            />
+          </div>
+
+          <div class="mb-3">
+            <label for="uiaa" class="form-label"
+              >Special Equipment or Tools </label
+            >
+            <select v-model="uiaa" id="uiaa" class="form-select">
+              <option value="" disabled>Select Special Equipment or Tools </option>
+              <option
+                v-for="option in uiaaOptions"
+                :key="option"
+                :value="option"
+              >
+                {{ option }}
+              </option>
+            </select>
+          </div>
+
+              <!-- Input field will always be present, but it will be conditionally enabled -->
+          <div class="mb-3">
+            <label for="dwset" class="form-label">Please Specify Category  if (Others)</label>
+            <input 
+              v-model="dwset" 
+              id="dwset" 
+              type="text" 
+              class="form-control"
+              :placeholder="uiaa === 'Others' ? 'Enter Special Equipment or Tools Details' : ''" 
+              :disabled="uiaa !== 'Others'" 
+              required="uiaa !== 'Others'"
+            />
+          </div>
+
+          <div class="mb-3">
+            <label for="dwtoa" class="form-label"
+              >Toolbox Orientation Attended? </label
+            >
+            <select v-model="dwtoa" id="dwtoa" class="form-select">
+              <option value="" disabled>Select YES or NO </option>
+              <option
+                v-for="option in dwtoaOptions"
+                :key="option"
+                :value="option"
+              >
+                {{ option }}
+              </option>
+            </select>
+          </div>
+
+          <div class="mb-3">
+            <label for="dwwpa" class="form-label"
+              >Work Permit Approval </label
+            >
+            <select v-model="dwwpa" id="dwwpa" class="form-select">
+              <option value="" disabled>Select Work Permit Approval </option>
+              <option
+                v-for="option in dwwpaOptions"
+                :key="option"
+                :value="option"
+              >
+                {{ option }}
+              </option>
+            </select>
+          </div>
+
+          <div class="mb-3">
+          <label for="file13" class="form-label"
+            >Photo Upload of Work Permit Approval</label
+          >
+          <input
+            type="file"
+            id="file13"
+            @change="handleFileChange($event, 'file13')"
+            class="form-control"
+          />
+        </div>
+
+          <div class="mb-3">
+            <label for="dwwap" class="form-label">Who Approved?</label>
+            <input
+              type="text"
+              id="dwwap"
+              class="form-control"
+              v-model="dwwap"
+              required
+            />
+          </div>
+
+
+
+
+
+
+        </div>
+
+
+      </div>
+
+      <button @click="submitData" class="btn btn-primary">Submit</button>
+    </div>
+
+    <br />
+    <footer>
+      <center>
+        <p id="footer-text" style="font-size: 12px; color: #888"></p>
+      </center>
+    </footer>
+
+    <script>
+      function getSheets() {
+        google.script.run
+          .withSuccessHandler(function (sheets) {
+            app.sheets = sheets;
+          })
+          .getSheetTabs();
+      }
+      const today = new Date();
+      const formattedDate = today.toISOString().split("T")[0]; // Format the date as YYYY-MM-DD
+
+      const app = new Vue({
+        el: "#app",
+        data: {
+          sheets: [],
+          selectedSheet: "",
+          name: "",
+          dateofreporting: formattedDate,
+          transactionOptions: [
+            "Incoming STL Client",
+            "Outgoing STL Client",
+            "Incoming Inline Client",
+            "Outgoing Inline Client",
+            "Incoming Marketing Event Supplier",
+            "Outgoing Marketing Event Supplier",
+            "Delivery",
+            "Pullout",
+            "Incoming Contractor",
+          ],
+          transaction: "",
+
+          icdtowOptions: [
+            "Maintenance Work",
+            "Demolition Works",
+            "Form and Pour Concrete Floors",
+            "Waterproofing Works",
+            "Masonry Works",
+            "Finishing Works",
+            "Electrical Works",
+            "Mechanical Works",
+            "Plumbing Works",
+            "Fire Detection and Alarm System",
+            "Fire Protection/Sprinkler System",
+            "Auxiliary",
+          ],
+          icdtow: "",
+
+          certificatePresentedOptions: ["FCI", "FCE", "MOA"],
+          certificatePresented: "",
+          uploadedFiles: {},
+          methodofApprovalOptions: [
+            "Email",
+            "WhatsApp Message",
+            "Text Message",
+            "Verbal",
+          ],
+          methodofApproval: "",
+          whoApprove: "",
+          //////////////////////////////////////////////
+
+          osccertificatePresentedOptions: ["FCI", "FCE", "Work Permit"],
+          osccertificatePresented: "",
+          oscmethodofApprovalOptions: [
+            "Email",
+            "WhatsApp Message",
+            "Text Message",
+            "Verbal",
+          ],
+          oscmethodofApproval: "",
+          oscwhoApprove: "",
+          ///////////////////////////////////////////////
+
+          iiccertificatePresentedOptions: [
+            "Work Permit",
+            "Certificate of Tenancy",
+            "MOA",
+            "Certificate of Ingress",
+            "Certificate of Egress",
+          ],
+          iiccertificatePresented: "",
+          iicmethodofApprovalOptions: ["Email", "WhatsApp Message", "Verbal"],
+          iicmethodofApproval: "",
+          iicwhoApprove: "",
+          ///////////////////////////////////////////////
+
+          oiccertificatePresentedOptions: ["FCI", "FCE", "MOA"],
+          oiccertificatePresented: "",
+          oicmethodofApprovalOptions: [
+            "Email",
+            "WhatsApp Message",
+            "Text Message",
+            "Verbal",
+          ],
+          oicmethodofApproval: "",
+          oicwhoApprove: "",
+          ///////////////////////////////////////////////
+
+          imecertificatePresentedOptions: [
+            "Online",
+            "Text Message",
+            "WhatsApp Message",
+            "Verbal",
+          ],
+          imecertificatePresented: "",
+          imewhoApprove: "",
+          imemalltenant: "",
+
+          ///////////////////////////////////////////////
+
+          omecertificatePresentedOptions: [
+            "Online",
+            "Text Message",
+            "WhatsApp Message",
+            "Verbal",
+          ],
+          omecertificatePresented: "",
+          omewhoApprove: "",
+          omemalltenant: "",
+
+          ///////////////////////////////////////////////
+         
+          ddcertificatePresentedOptions: [
+            "Retail Merchandise",
+            "Food Supplies",
+            "Office Equipment",
+            "Electronics",
+            "Fixtures / Furniture",
+            "Others",
+          ],
+          ddcertificatePresented: "",
+          ddworkpermitapprovaloptions: [
+            "Online",
+            "Text Message",
+            "WhatsApp Message",
+            "Verbal",
+          ],
+          ddworkpermitapproval: "",
+          ddwhoApprove: "",
+          //////////////////////PLL
+          pllcertificatePresented: "",
+          pllcertificatePresentedOptions: [
+            "Online",
+            "Text Message",
+            "WhatsApp Message",
+            "Verbal",
+          ],
+          cat: "",
+          catOptions: [
+            "AC Maintenance and Repair",
+            "Electrical Maintenance and Repair",
+            "Fit-out Works",
+            "Plumbing Works",
+            "Others",
+          ],
+          seot: "",
+          seotOptions: [
+            "Heavy Machinery",
+            "Lifting Equipment",
+            "Hazardous Materials",
+            "Others",
+          ],
+          cattoa: "",
+          cattoaOptions: ["YES", "NO"],
+          mwd: "",
+          mwdOptions: ["Online", "Text Message", "WhatsApp Message", "Verbal"],
+
+
+          /////////////////////////////
+
+
+          catdws:"",
+          catdwsOptions: ["Ceiling", "Wall", "Floor", "Others"],
+
+          uiaa: "",
+          uiaaOptions: ["Heavy Machinery","Lifting Equipment", "Hazardous Materials", "Others"],
+
+          dwtoa: "",
+          dwtoaOptions: ["YES","NO"],
+
+          dwwpa: "",
+          dwwpaOptions: ["Online", "Text Message", "WhatsApp Message", "Verbal"]
+          
+     
+
+        },
+        mounted() {
+          getSheets();
+          this.addNumberInputValidation();
+        },
+        updated() {
+          // Reapply the validation listeners when the DOM is updated
+          this.addNumberInputValidation();
+        },
+        watch: {
+          dateofreporting() {
+            const today = new Date();
+            const formattedDate = today.toISOString().split("T")[0];
+            this.dateofreporting = formattedDate; // Reset the date to today
+          },
+          seot(newVal) {
+            // If seot is not 'Others', clear the 'seotsset' field
+            if (newVal !== 'Others') {
+              this.seotsset = '';
+            }
+          },
+          cat(newVal) {
+            // If seot is not 'Others', clear the 'seotsset' field
+            if (newVal !== 'Others') {
+              this.catothers = '';
+            }
+          },
+          ddcertificatePresented(newVal) {
+            // If seot is not 'Others', clear the 'seotsset' field
+            if (newVal !== 'Others') {
+              this.coiothers = '';
+            }
+          },
+          catdws(newVal) {
+            // If seot is not 'Others', clear the 'seotsset' field
+            if (newVal !== 'Others') {
+              this.catdwsdw = '';
+            }
+          },
+           uiaa(newVal) {
+            // If seot is not 'Others', clear the 'seotsset' field
+            if (newVal !== 'Others') {
+              this.dwset = '';
+            }
+          },
+
+
+
+        },
+
+        methods: {
+
+          validateForm() {
+            // Log the value of ddcertificatePresented for debugging
+            console.log("ddcertificatePresented:", this.ddcertificatePresented);
+
+            // Using Switch statement
+            switch (this.ddcertificatePresented) {
+              case '':
+                alert("Please select a category of items.");
+                return false;  // Prevent form submission if not selected
+              case 'Others':
+                if (!this.coiothers.trim()) {
+                  alert("Please specify the category of items.");
+                  return false;  // Prevent form submission if 'coiothers' is empty
+                }
+                break; // If 'Others' is selected and 'coiothers' is filled, continue with form submission
+              default:
+                return true;  // If everything is valid, allow form submission
+            }
+          },
+
+          validateForm() {
+          // Check if 'ddcertificatePresented' is selected
+          if (!this.ddcertificatePresented) {
+            alert("Please select a category of items.");
+            return false;
+          }
+
+          // If 'Others' is selected, ensure 'coiothers' is filled
+          if (this.ddcertificatePresented === 'Others' && !this.coiothers) {
+            alert("Please specify the category of items.");
+            return false; // Prevent form submission
+          }
+
+          // If everything is valid, return true to allow form submission
+          return true;
+        },
+
+
+
+          addNumberInputValidation() {
+            // Find all input elements of type 'number' that are conditionally rendered
+            const numberInputs = document.querySelectorAll(
+              '.validate-number input[type="number"]'
+            );
+
+            // Loop through each input and add event listeners
+            numberInputs.forEach((input) => {
+              input.addEventListener("input", this.validateNumber);
+            });
+          },
+
+          validateNumber(event) {
+            const input = event.target;
+
+            // Remove any non-digit characters
+            let sanitizedValue = input.value.replace(/[^\d]/g, "");
+
+            // Limit to 4 digits (do not allow more than 4 digits)
+            if (sanitizedValue.length > 4) {
+              sanitizedValue = sanitizedValue.slice(0, 4); // Truncate to 4 digits
+            }
+
+            // Check if 4 digits have already been entered
+            if (sanitizedValue.length === 4) {
+              // Optionally reject further input or ignore it
+
+              alert("4 digits only.");
+            }
+
+            // Update the input value with the sanitized (and truncated) value
+            input.value = sanitizedValue;
+
+            // Manually update the corresponding model (if using v-model)
+            const model = input.getAttribute("v-model");
+            if (model) {
+              this[model] = sanitizedValue; // Update the model value with sanitized value
+            }
+          },
+
+          handleFileChange(event, key) {
+            const file = event.target.files[0];
+            if (!file) {
+              alert("No file selected.");
+              return;
+            }
+
+            const validMimeTypes = ["image/jpeg", "image/png"];
+            if (!validMimeTypes.includes(file.type)) {
+              alert("Only JPG and PNG files are allowed.");
+              event.target.value = "";
+              return;
+            }
+
+            if (file.size > 15 * 1024 * 1024) {
+              // 50MB limit
+              alert("File is too large (15MB limit).");
+              event.target.value = "";
+              return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = () => {
+              this.uploadedFiles[key] = {
+                name: file.name,
+                data: reader.result.split(",")[1],
+                mimeType: file.type,
+              };
+            };
+            reader.readAsDataURL(file);
+          },
+
+          submitData() {
+            document.getElementById("loadingSpinner").style.display = "flex";
+
+            // Helper function to sanitize input
+            function sanitizeInput(input) {
+              if (typeof input === "string") {
+                return input.trim().replace(/[^\w\s]/gi, ""); // Removes special characters, keeping only alphanumeric and spaces
+              }
+              return input; // If not a string, return the input as is
+            }
+          
+
+
+            // Get the selected transaction type
+            const selectedTransaction = this.transaction;
+            const selectedWork = this.icdtow;
+
+            // Define required fields for each transaction type
+            let requiredFields = [];
+            let fileFields = [];
+
+            if (selectedTransaction === "Incoming STL Client") {
+              requiredFields = [
+                this.selectedSheet,
+                this.name,
+                this.dateofreporting,
+                this.transaction,
+                this.tnbn,
+                this.moanum,
+                this.doi,
+                this.ds,
+                this.de,
+                this.certificatePresented,
+                this.methodofApproval,
+                this.whoApprove,
+              ];
+              fileFields = [this.uploadedFiles.file1, this.uploadedFiles.file2]; // File fields for this transaction
+            } else if (selectedTransaction === "Outgoing STL Client") {
+              requiredFields = [
+                this.selectedSheet,
+                this.name,
+                this.dateofreporting,
+                this.transaction,
+                this.osctnbn,
+                this.oscmoanum,
+                this.oscdoi,
+                this.oscds,
+                this.oscde,
+                this.osccertificatePresented,
+                this.oscmethodofApproval,
+                this.oscwhoApprove,
+              ];
+              fileFields = [this.uploadedFiles.file3, this.uploadedFiles.file4]; // File fields for this transaction
+            } else if (selectedTransaction === "Incoming Inline Client") {
+              requiredFields = [
+                this.selectedSheet,
+                this.name,
+                this.dateofreporting,
+                this.transaction,
+                this.iictnbn,
+                this.iicdoi,
+                this.iicds,
+                this.iicde,
+                this.iiccertificatePresented,
+                this.iicmethodofApproval,
+                this.iicwhoApprove,
+              ];
+              fileFields = [this.uploadedFiles.file5, this.uploadedFiles.file6]; // File fields for this transaction
+            } else if (selectedTransaction === "Outgoing Inline Client") {
+              requiredFields = [
+                this.selectedSheet,
+                this.name,
+                this.dateofreporting,
+                this.transaction,
+                this.oictnbn,
+                this.oicdoi,
+                this.oicds,
+                this.oicde,
+                this.oiccertificatePresented,
+                this.oicmethodofApproval,
+                this.oicwhoApprove,
+              ];
+              fileFields = [this.uploadedFiles.file7, this.uploadedFiles.file8]; // File fields for this transaction
+            } else if (
+              selectedTransaction === "Incoming Marketing Event Supplier"
+            ) {
+              requiredFields = [
+                this.selectedSheet,
+                this.name,
+                this.dateofreporting,
+                this.transaction,
+                this.imecn,
+                this.imenp,
+                this.imede,
+                this.imesed,
+                this.imeep,
+                this.imeli,
+                this.imeqi,
+                this.imewhoApprove,
+                this.imemalltenant,
+              ];
+              fileFields = [this.uploadedFiles.file9]; // File fields for this transaction
+            } else if (
+              selectedTransaction === "Outgoing Marketing Event Supplier"
+            ) {
+              requiredFields = [
+                this.selectedSheet,
+                this.name,
+                this.dateofreporting,
+                this.transaction,
+                this.omecn,
+                this.omenp,
+                this.omesed,
+                this.omeep,
+                this.omeli,
+                this.omewhoApprove,
+                this.omemalltenant,
+              ];
+              fileFields = [this.uploadedFiles.file10]; // File fields for this transaction
+            } else if (selectedTransaction === "Delivery") {
+              
+              requiredFields = [
+                this.selectedSheet,
+                this.name,
+                this.dateofreporting,
+                this.transaction,
+                this.ddtsn,
+                this.dddd,
+                this.dddt,
+                this.dddep,
+                this.ddcertificatePresented,
+                this.ddworkpermitapproval,
+                this.ddqoei,
+                this.ddwhoApprove,
+              ];
+              fileFields = [this.uploadedFiles.file12]; // File fields for this transaction
+              
+            } else if (selectedTransaction === "Pullout") {
+              requiredFields = [
+                this.selectedSheet,
+                this.name,
+                this.dateofreporting,
+                this.transaction,
+                this.plldtsn,
+                this.plldd,
+                this.pllt,
+                this.pllext,
+                this.pllloi,
+                this.pllqty,
+                this.pllcertificatePresented,
+                this.pllwhoApprove,
+              ];
+            } else if (selectedTransaction === "Incoming Contractor" && selectedWork === "Demolition Workds") {
+              requiredFields = [
+                this.selectedSheet,
+                this.name,
+                this.dateofreporting,
+                this.transaction,
+
+                this.icdtow,
+                this.cat,
+                
+                this.catcn,
+                this.catwl,
+                this.catesdw,
+                this.cateedw,
+                this.catmbi,
+                this.seot,
+             
+                this.cattoa,
+                this.mwd,
+                this.catwap,
+              ];
+              fileFields = [this.uploadedFiles.file11]; // File fields for this transaction
+            } else {
+              alert("Please select a valid transaction type.");
+              document.getElementById("loadingSpinner").style.display = "none"; // Hide loading spinner if no transaction type selected
+              return;
+            }
+
+            // Validate required fields for the selected transaction type
+            for (let i = 0; i < requiredFields.length; i++) {
+              if (!requiredFields[i]) {
+                alert("Please fill out all required fields.");
+                document.getElementById("loadingSpinner").style.display =
+                  "none"; // Hide loading spinner
+                return;
+              }
+            }
+
+            // Validate file fields for the selected transaction type
+            for (let i = 0; i < fileFields.length; i++) {
+              if (!fileFields[i]) {
+                alert("Please upload all required files.");
+                document.getElementById("loadingSpinner").style.display =
+                  "none"; // Hide loading spinner
+                return;
+              }
+            }
+
+            // Prepare the form data
+            const formData = {
+              selectedSheet: this.selectedSheet,
+              name: sanitizeInput(this.name),
+              dateofreporting: this.dateofreporting,
+              transaction: sanitizeInput(this.transaction),
+              tnbn: sanitizeInput(this.tnbn),
+              moanum: sanitizeInput(this.moanum),
+              doi: this.doi,
+              ds: this.ds,
+              de: this.de,
+              certificatePresented: sanitizeInput(this.certificatePresented),
+              file1: this.uploadedFiles.file1, // Assuming files don't need sanitization
+              file2: this.uploadedFiles.file2,
+              methodofApproval: sanitizeInput(this.methodofApproval),
+              whoApprove: sanitizeInput(this.whoApprove),
+              // OSC
+              osctnbn: sanitizeInput(this.osctnbn),
+              oscmoanum: sanitizeInput(this.oscmoanum),
+              oscdoi: this.oscdoi,
+              oscds: this.oscds,
+              oscde: this.oscde,
+              osccertificatePresented: sanitizeInput(
+                this.osccertificatePresented
+              ),
+              file3: this.uploadedFiles.file3,
+              file4: this.uploadedFiles.file4,
+              oscmethodofApproval: sanitizeInput(this.oscmethodofApproval),
+              oscwhoApprove: sanitizeInput(this.oscwhoApprove),
+              // IIC
+              iictnbn: sanitizeInput(this.iictnbn),
+              iicdoi: this.iicdoi,
+              iicds: this.iicds,
+              iicde: this.iicde,
+              iiccertificatePresented: sanitizeInput(
+                this.iiccertificatePresented
+              ),
+              file5: this.uploadedFiles.file5,
+              file6: this.uploadedFiles.file6,
+              iicmethodofApproval: sanitizeInput(this.iicmethodofApproval),
+              iicwhoApprove: sanitizeInput(this.iicwhoApprove),
+              // OIC
+              oictnbn: sanitizeInput(this.oictnbn),
+              oicdoi: this.oicdoi,
+              oicds: this.oicds,
+              oicde: this.oicde,
+              oiccertificatePresented: sanitizeInput(
+                this.oiccertificatePresented
+              ),
+              file7: this.uploadedFiles.file7,
+              file8: this.uploadedFiles.file8,
+              oicmethodofApproval: sanitizeInput(this.oicmethodofApproval),
+              oicwhoApprove: sanitizeInput(this.oicwhoApprove),
+              // IME
+              imecn: sanitizeInput(this.imecn),
+              imenp: sanitizeInput(this.imenp),
+              imede: this.imede,
+              imesed: this.imesed,
+              imeep: this.imeep,
+              imeli: this.imeli,
+              imeqi: this.imeqi,
+              imecertificatePresented: sanitizeInput(
+                this.imecertificatePresented
+              ),
+              file9: this.uploadedFiles.file9,
+              imewhoApprove: sanitizeInput(this.imewhoApprove),
+              imemalltenant: sanitizeInput(this.imemalltenant),
+              // OME
+              omecn: sanitizeInput(this.omecn),
+              omenp: sanitizeInput(this.omenp),
+              omesed: this.omesed,
+              omeep: this.omeep,
+              omeli: this.omeli,
+              omecertificatePresented: sanitizeInput(
+                this.omecertificatePresented
+              ),
+              file10: this.uploadedFiles.file10,
+              omewhoApprove: sanitizeInput(this.omewhoApprove),
+              omemalltenant: sanitizeInput(this.omemalltenant),
+
+              // DD
+
+              ddtsn: sanitizeInput(this.ddtsn),
+
+              dddd: this.dddd,
+              dddt: this.dddt,
+              dddep: this.dddep,
+              omeli: this.omeli,
+              ddcertificatePresented: sanitizeInput(
+                this.ddcertificatePresented
+              ),
+              coiothers: this.coiothers,
+              ddworkpermitapproval: sanitizeInput(this.ddworkpermitapproval),
+              file12: this.uploadedFiles.file12,
+              ddqoei: this.ddqoei,
+
+              ddwhoApprove: sanitizeInput(this.ddwhoApprove),
+              // PLL
+
+              plldtsn: this.plldtsn,
+              plldd: this.plldd,
+              pllt: this.pllt,
+              pllext: this.pllext,
+              pllloi: this.pllloi,
+              pllqty: this.pllqty,
+              pllcertificatePresented: this.pllcertificatePresented,
+              pllwhoApprove: this.pllwhoApprove,
+
+              // IC
+
+              icdtow: this.icdtow,
+
+              cat: this.cat,
+
+              catothers: this.catothers,
+
+              catcn: this.catcn,
+              catwl: this.catwl,
+
+              
+              catesdw: this.catesdw,
+              cateedw: this.cateedw,
+              catmbi: this.catmbi,
+              
+              seot: this.seot,
+
+              seotsset: this.seotsset,
+              
+              cattoa: this.cattoa,
+              mwd: this.mwd,
+              file11: this.uploadedFiles.file11,
+              catwap: this.catwap,
+
+
+
+            };
+
+            // Call Google Apps Script function to submit data
+            google.script.run
+              .withSuccessHandler(function (response) {
+                // Hide the loading spinner after the submission is done
+                document.getElementById("loadingSpinner").style.display =
+                  "none";
+
+                // Optionally, show a success message to the user (or handle in a different way)
+                alert("Data submitted successfully!");
+              })
+              .withFailureHandler(function (error) {
+                // Hide the loading spinner in case of failure
+                document.getElementById("loadingSpinner").style.display =
+                  "none";
+
+                // Handle failure (alert or logging)
+                alert("Failed to submit data. Please try again.");
+                console.error(error);
+              })
+              .submitData(formData); // Pass the form data to the server-side function
+          },
+        },
+      });
+      window.onload = async () => {
+        try {
+          // Fetch date from an online time API
+          const response = await fetch(
+            "http://worldtimeapi.org/api/timezone/Etc/UTC"
+          );
+          const data = await response.json();
+
+          // Extract year from the API response
+          const currentYear = new Date(data.datetime).getFullYear();
+
+          // Update the footer text
+          document.getElementById(
+            "footer-text"
+          ).innerHTML = `&copy; ${currentYear} Megaworld Lifestyle Malls. All rights reserved.`;
+        } catch (error) {
+          console.error("Error fetching date:", error);
+
+          // Fallback to local date if API fails
+          const fallbackYear = new Date().getFullYear();
+          document.getElementById(
+            "footer-text"
+          ).innerHTML = `&copy; ${fallbackYear} Megaworld Lifestyle Malls. All rights reserved.`;
+        }
+      };
+    </script>
+  </body>
+</html>
